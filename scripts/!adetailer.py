@@ -553,6 +553,11 @@ class AfterDetailerScript(scripts.Script):
             pred = predictor(ad_model, pp.image, args.ad_confidence, **kwargs)
 
         masks = self.pred_preprocessing(pred, args)
+        steps = len(masks)
+
+        shared.state.adetail_task_no += 1
+        shared.state.adetail_subtask_no = 1
+        shared.state.adetail_subtask_count = max(steps, 1)
 
         if not masks:
             print(
@@ -567,7 +572,6 @@ class AfterDetailerScript(scripts.Script):
             suffix="-ad-preview" + suffix(n, "-"),
         )
 
-        steps = len(masks)
         processed = None
         state.job_count += steps
 
@@ -598,6 +602,7 @@ class AfterDetailerScript(scripts.Script):
             self.compare_prompt(p2, processed, n=n)
             p2 = copy(i2i)
             p2.init_images = [processed.images[0]]
+            shared.state.adetail_subtask_no += 1
 
         if processed is not None:
             pp.image = processed.images[0]
