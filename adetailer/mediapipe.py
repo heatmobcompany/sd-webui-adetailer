@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 
-import mediapipe as mp
+import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -29,6 +29,8 @@ def mediapipe_predict(
 def mediapipe_face_detection(
     model_type: int, image: Image.Image, confidence: float = 0.3
 ) -> PredictOutput:
+    import mediapipe as mp
+
     img_width, img_height = image.size
 
     mp_face_detection = mp.solutions.face_detection
@@ -66,24 +68,9 @@ def mediapipe_face_detection(
     return PredictOutput(bboxes=bboxes, masks=masks, preview=preview)
 
 
-def get_convexhull(points: np.ndarray) -> list[tuple[int, int]]:
-    """
-    Parameters
-    ----------
-      points: An ndarray of shape (n, 2) containing the 2D points.
-
-    Returns
-    -------
-      list[tuple[int, int]]: Input for the draw.polygon function
-    """
-    from scipy.spatial import ConvexHull
-
-    hull = ConvexHull(points)
-    vertices = hull.vertices
-    return list(zip(points[vertices, 0], points[vertices, 1]))
-
-
 def mediapipe_face_mesh(image: Image.Image, confidence: float = 0.3) -> PredictOutput:
+    import mediapipe as mp
+
     mp_face_mesh = mp.solutions.face_mesh
     draw_util = mp.solutions.drawing_utils
     drawing_styles = mp.solutions.drawing_styles
@@ -111,8 +98,8 @@ def mediapipe_face_mesh(image: Image.Image, confidence: float = 0.3) -> PredictO
                 connection_drawing_spec=drawing_styles.get_default_face_mesh_tesselation_style(),
             )
 
-            points = np.array([(land.x * w, land.y * h) for land in landmarks.landmark])
-            outline = get_convexhull(points)
+            points = np.intp([(land.x * w, land.y * h) for land in landmarks.landmark])
+            outline = cv2.convexHull(points).reshape(-1).tolist()
 
             mask = Image.new("L", image.size, "black")
             draw = ImageDraw.Draw(mask)
@@ -127,6 +114,8 @@ def mediapipe_face_mesh(image: Image.Image, confidence: float = 0.3) -> PredictO
 def mediapipe_face_mesh_eyes_only(
     image: Image.Image, confidence: float = 0.3
 ) -> PredictOutput:
+    import mediapipe as mp
+
     mp_face_mesh = mp.solutions.face_mesh
 
     left_idx = np.array(list(mp_face_mesh.FACEMESH_LEFT_EYE)).flatten()
@@ -147,11 +136,11 @@ def mediapipe_face_mesh_eyes_only(
         masks = []
 
         for landmarks in pred.multi_face_landmarks:
-            points = np.array([(land.x * w, land.y * h) for land in landmarks.landmark])
+            points = np.intp([(land.x * w, land.y * h) for land in landmarks.landmark])
             left_eyes = points[left_idx]
             right_eyes = points[right_idx]
-            left_outline = get_convexhull(left_eyes)
-            right_outline = get_convexhull(right_eyes)
+            left_outline = cv2.convexHull(left_eyes).reshape(-1).tolist()
+            right_outline = cv2.convexHull(right_eyes).reshape(-1).tolist()
 
             mask = Image.new("L", image.size, "black")
             draw = ImageDraw.Draw(mask)
