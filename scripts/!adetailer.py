@@ -630,7 +630,7 @@ class AfterDetailerScript(scripts.Script):
         is_processed = False
         with CNHijackRestore(), pause_total_tqdm(), cn_allow_script_control():
             for n, args in enumerate(arg_list):
-                if args.ad_model == "None":
+                if not args.ad_model or args.ad_model == "None":
                     continue
                 is_processed |= self._postprocess_image(p, pp, args, n=n)
 
