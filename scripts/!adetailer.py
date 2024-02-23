@@ -621,7 +621,7 @@ class AfterDetailerScript(scripts.Script):
         p._ad_idx = getattr(p, "_ad_idx", -1) + 1
         init_image = copy(pp.image)
         arg_list = self.get_args(p, *args_)
-
+        print("Adetailer - Enable ad_controlnet: ", getattr(p, "ad_controlnet", True))
         if p.scripts is not None and self.need_call_postprocess(p):
             dummy = Processed(p, [], p.seed, "")
             with preseve_prompts(p):
@@ -639,7 +639,7 @@ class AfterDetailerScript(scripts.Script):
                 p, init_image, condition="ad_save_images_before", suffix="-ad-before"
             )
 
-        if p.scripts is not None and self.need_call_process(p):
+        if p.scripts is not None and self.need_call_process(p) and getattr(p, "ad_controlnet", True):
             with preseve_prompts(p):
                 p.scripts.process(copy(p))
 
